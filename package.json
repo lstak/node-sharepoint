@@ -1,8 +1,8 @@
 {
   "author": "Luc Stakenborg <l.stakenborg@oxida.com> (http://www.oxida.com)",
   "name": "sharepoint",
-  "description": "Connect Node to SharePoint",
-  "version": "0.0.0",
+  "description": "SharePoint client for Node.js",
+  "version": "0.0.1",
   "homepage": "https://github.com/lstak/node-sharepoint",
   "repository": {
     "type": "git",
