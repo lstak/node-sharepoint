@@ -1,5 +1,5 @@
 # SharePoint client for Node.js
-This Node module provis a SharePoint client for Node.js applications. This allows you to access SharePoint 2010 lists and items, using ListData.svc, an OData based REST API for SharePoint 2010. 
+This Node module provides a SharePoint client for Node.js applications. This allows you to access SharePoint 2010 lists and items, using ListData.svc, an OData based REST API for SharePoint 2010. 
 
 The current version is restricted to SharePoint Online, using claims based authentication.
 
@@ -35,13 +35,14 @@ var client = new SP.RestService('http://oxida.sharepoint.com/teamsite')
 ````
 
 ### client.signin (username, password, callback)
-The client performs a claims-based authentication process:
+The signin method performs a claims-based authentication:
 
-- submits a SAML token request to Microsoft Online Security Token Service
-- receives a signed security token
-- POSTs the token to SharePoint Online
-- receives FedAuth and rtFa authentication cookies 
-- stores the cookies in client for use in subsequent requests 
+- build a SAML request (using SAML.xml template included in module)
+- submit a SAML token request to Microsoft Online Security Token Service
+- receive a signed security token
+- POST the token to SharePoint Online
+- receive FedAuth and rtFa authentication cookies 
+- store the cookies in client for use in subsequent requests 
 
 Callback is called when authentication is completed. You can wrap all your service requests inside this callback
 
@@ -60,7 +61,9 @@ client.signin('myname', 'mypassword', function(err,data) {
 Return the metadata document for the service ($metadata)
 
 ````
-var contacts = client.list('Contacts');
+var contacts = client.metadata(function(err, data) {
+	console.log(data);
+});
 ````
 
 
