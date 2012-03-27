@@ -1,11 +1,11 @@
 # SharePoint client for Node.js
-You can use this SharePoint client in Node.js application to access SharePoint 2010 lists and items, using ListData.svc, an OData based REST API for SharePoint 2010. 
+This Node module provis a SharePoint client for Node.js applications. This allows you to access SharePoint 2010 lists and items, using ListData.svc, an OData based REST API for SharePoint 2010. 
 
-The current version is developed for SharePoint Online, using claims based authentication.
+The current version is restricted to SharePoint Online, using claims based authentication.
 
 ## Installation
 
-As usual:
+Use npm to install the module:
 
 ````
     > npm install sharepoint
@@ -13,28 +13,42 @@ As usual:
 
 ## API
 
+Due to the asynchrounous nature of Node.js, the SharePoint client requires the use callbacks in requests. See documentation below.
+
+All callbacks have 2 arguments: err and data:
+
+````
+function callback (err, data) {
+	// err contains an error, if any
+	// data contains the resulting data
+} 
+````
+
+
 ### SP.RestService(site)
-Class representing a REST Service client for a SharePoint site.
+An object of this class represents a REST Service client for the specified SharePoint site.
 
 Example:
 
-    var client = new SP.RestService('http://oxida.sharepoint.com/teamsite')
-
+````
+var client = new SP.RestService('http://oxida.sharepoint.com/teamsite')
+````
 
 ### client.signin (username, password, callback)
-Performs claims-based authentication process:
-- submits a SAML token request to Microsoft Online
+The client performs a claims-based authentication process:
+
+- submits a SAML token request to Microsoft Online Security Token Service
 - receives a signed security token
-- POSTs the token the SharePoint online
-- receives FedAuht and rtFa authentication cookies 
-- will store the cookies in client for subsequent requests by the client
+- POSTs the token to SharePoint Online
+- receives FedAuth and rtFa authentication cookies 
+- stores the cookies in client for use in subsequent requests 
 
 Callback is called when authentication is completed. You can wrap all your service requests inside this callback
 
 Example:
 
 ````
-client.signin('myname','mypassword',function(err,data) {
+client.signin('myname', 'mypassword', function(err,data) {
 
 	// start to do authenticated requests here....
 
@@ -42,12 +56,19 @@ client.signin('myname','mypassword',function(err,data) {
 ````
 
 
+### client.metadata(callback)
+Return the metadata document for the service ($metadata)
+
+````
+var contacts = client.list('Contacts');
+````
+
 
 ### client.list(name)
 Return a new List object, which provides get, update and del(ete) operations
 
 ````
-var contacts = client.list('contacts');
+var contacts = client.list('Contacts');
 ````
 
 ### list.get(callback)
@@ -60,7 +81,7 @@ contacts.get(function (err, data) {
 ````
 
 ### list.get(id, callback)
-Get a single item from the list.
+Get a single item with id from the list.
 
 ````
 contacts.get(12, function (err, data) {
@@ -77,18 +98,58 @@ contacts.get({$orderby: 'FirstName'}, function (err, data) {
 })
 ````
 
-## Examples
-
-````javascript
-
-// require the module in your code
-var SP = require('sharepoint');
-
-var client = new SP.RestService('http://oxida.sharepoint.com/teamsite');
-
-
-
-client.signin('l.stakenborg@oxida.com', 'Oxidaluc4', function (err, data) {
-
+### list.add(attributes, callback)
+Add a new item to the list 
 
 ````
+contacts.add({LastName: 'Picolet', FirstName: 'Emma'}, function (err, data) {
+	// data contains the new item returned from server.
+	// data.Id will be the server assigned Id.
+})
+````
+
+### list.update(id, attributes, callback)
+Update the attributes for the list item specified by Id. The client performs a partial update: only the attributes specified in the hash are changed. Partial updates require the use of etags, so you need to get the item first before you change it.
+
+````
+contacts.get(411, function (err, data) {
+
+	var changes = {
+		// include the changes that need to be made
+		LastName: 'Tell',
+		FirstName: 'William',
+
+		// pass the metadata from the fetched item
+		// this includes the require etag
+		__metadata: data.__metadata
+	}
+
+	contacts.add(411, changes, function () {
+		// at this point, the change is completed
+	})        
+})
+
+````
+
+### list.del(id, callback)
+Delete list item specified by Id from the list. 
+
+````
+contacts.del(411, function (err, data) {
+	// at this point deletion is completed.
+})
+
+````
+
+
+## To Do
+
+This first version of SharePoint client library allows you to read and write to SharePoint Online lists. 
+
+There's still a lot to do:
+
+- Implement and improve error handling
+- Support for on-premise SharePoint
+- Support for other authentication mechanisms (form based, NTLM, ..)
+- Support for other SharePoint APIs (SOAP, CSOM).
+
