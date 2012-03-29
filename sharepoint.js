@@ -93,10 +93,10 @@ function requestToken(params, callback) {
         host: params.sts.host,
         path: params.sts.path,
         headers: {
-            'Content-Type': 'application/soap+xml; charset=utf-8',
             'Content-Length': samlRequest.length
         }
     };
+
 
     var req = https.request(options, function (res) {
         var xml = '';
@@ -131,13 +131,10 @@ function submitToken(params, callback) {
     var options = {
         method: 'POST',
         host: url.hostname,
-        path: url.path,
-        headers: {
-            'Content-Type': 'application/x-www-form-urlencoded',
-            'Content-Length': token.length
-        }
+        path: url.path
     }
 
+    
     var req = http.request(options, function (res) {
         var xml = '';
         res.setEncoding('utf8');
@@ -147,7 +144,7 @@ function submitToken(params, callback) {
 
         res.on('end', function () {
             var cookies = parseCookies(res.headers['set-cookie'])
-
+            
             callback(null, {
                 FedAuth: getCookie(cookies, 'FedAuth').value,
                 rtFa: getCookie(cookies, 'rtFa').value

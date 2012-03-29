@@ -79,7 +79,9 @@ Fetch all items from list.
 
 ````
 contacts.get(function (err, data) {
-	// data contains an array of all items in Contacts list
+	// data.results contains an array of all items in Contacts list
+	// data.__count contains the total number items in Contacts list
+	// Use query {$inlinecount:'allpages'} to request the __count property (see below).
 })
 ````
 
@@ -97,6 +99,14 @@ Query the list using OData query options.
 
 ````
 contacts.get({$orderby: 'FirstName'}, function (err, data) {
+	// data contains items from Contacts list, sorted on FirstName.
+})
+````
+If you can use $inlinecount to request a total count of items in list:
+
+````
+// get the first 3 items and return total number of items in Contacts list
+contacts.get({$top: 3, $inlinecount:'allpages'}, function (err, data) {
 	// data contains items from Contacts list, sorted on FirstName.
 })
 ````
@@ -127,7 +137,7 @@ contacts.get(411, function (err, data) {
 		__metadata: data.__metadata
 	}
 
-	contacts.add(411, changes, function () {
+	contacts.update(411, changes, function () {
 		// at this point, the change is completed
 	})        
 })
