@@ -102,7 +102,7 @@ contacts.get({$orderby: 'FirstName'}, function (err, data) {
 	// data contains items from Contacts list, sorted on FirstName.
 })
 ````
-If you can use $inlinecount to request a total count of items in list:
+Use $inlinecount to request the total count of items in list:
 
 ````
 // get the first 3 items and return total number of items in Contacts list
