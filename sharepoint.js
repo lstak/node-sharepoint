@@ -109,6 +109,10 @@ function requestToken(params, callback) {
         res.on('end', function () {
             
             parseXml(xml, function (js) {
+                if (js['S:Body']['S:Fault']) {
+                    var error = js['S:Body']['S:Fault']['S:Detail']['psf:error']['psf:internalerror']['psf:text'];
+                    throw error;
+                }
                 // extract token
                 var token = js['S:Body']['wst:RequestSecurityTokenResponse']['wst:RequestedSecurityToken']['wsse:BinarySecurityToken']['#'];
 
