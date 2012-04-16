@@ -107,8 +107,16 @@ function requestToken(params, callback) {
         })
 
         res.on('end', function () {
-            
+
             parseXml(xml, function (js) {
+
+                // check for errors
+                if (js['S:Body']['S:Fault']) { 
+                    var error = js['S:Body']['S:Fault']['S:Detail']['psf:error']['psf:internalerror']['psf:text'];
+                    callback(error);
+                    return; 
+                } 
+
                 // extract token
                 var token = js['S:Body']['wst:RequestSecurityTokenResponse']['wst:RequestedSecurityToken']['wsse:BinarySecurityToken']['#'];
 
@@ -169,6 +177,12 @@ function signin(username, password, callback) {
     //console.log(options);
 
     requestToken(options, function (err, data) {
+
+        if (err) {
+            callback(err);
+            return;
+        }
+
         self.FedAuth = data.FedAuth;
         self.rtFa = data.rtFa;
 

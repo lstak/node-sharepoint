@@ -51,6 +51,12 @@ Example:
 ````
 client.signin('myname', 'mypassword', function(err,data) {
 
+	// check for errors during login, e.g. invalid credentials
+	if (err) {
+        console.log("Error found: ", err);
+        return;
+    }
+
 	// start to do authenticated requests here....
 
 })
