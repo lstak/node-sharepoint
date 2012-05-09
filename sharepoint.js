@@ -134,16 +134,25 @@ function requestToken(params, callback) {
 
 function submitToken(params, callback) {
     var token = params.token,
-        url = urlparse(params.endpoint);
+        url = urlparse(params.endpoint),
+        ssl = (url.protocol == 'https:');
 
     var options = {
         method: 'POST',
         host: url.hostname,
-        path: url.path
-    }
+        path: url.path,
+        headers: {
+            // E accounts require a user agent string
+            'User-Agent': 'Mozilla/5.0 (compatible; MSIE 9.0; Windows NT 6.1; Win64; x64; Trident/5.0)'
+        }
+    };
+
+    var protocol = (ssl ? https : http);
 
     
-    var req = http.request(options, function (res) {
+
+    var req = protocol.request(options, function (res) {
+
         var xml = '';
         res.setEncoding('utf8');
         res.on('data', function (chunk) {
@@ -151,14 +160,15 @@ function submitToken(params, callback) {
         })
 
         res.on('end', function () {
+
             var cookies = parseCookies(res.headers['set-cookie'])
-            
+
             callback(null, {
                 FedAuth: getCookie(cookies, 'FedAuth').value,
                 rtFa: getCookie(cookies, 'rtFa').value
             })
         })
-    })
+    });
 
     req.end(token);
 }
@@ -173,8 +183,6 @@ function signin(username, password, callback) {
         sts: self.sts,
         endpoint: self.url.protocol + '//' + self.url.hostname + self.login
     }
-
-    //console.log(options);
 
     requestToken(options, function (err, data) {
 
@@ -198,6 +206,7 @@ function request(options, next) {
         list = options.list,
         id = options.id,
         query = options.query,
+        ssl = (this.protocol == 'https:'),
         path = this.path + this.odatasvc + list +
             (id ? '(' + id + ')' : '') +
             (query ? '?' + qs.stringify(query) : '');
@@ -221,9 +230,15 @@ function request(options, next) {
 
     //console.log('OPTIONS:', req_options);
     //console.log('DATA:', req_data);
-    var req = http.request(req_options, function (res) {
+
+    // support for using https
+    var protocol = (ssl ? https : http);
+
+    var req = protocol.request(req_options, function (res) {
         //console.log('STATUS:', res.statusCode);
         //console.log('HEADERS:', res.headers);
+       
+
         var res_data = '';
         res.setEncoding('utf8');
         res.on('data', function (chunk) {
@@ -347,6 +362,8 @@ SP.RestService = function (url) {
     this.url = urlparse(url);
     this.host = this.url.host;
     this.path = this.url.path;
+    this.protocol = this.url.protocol;
+
 
     // External Security Token Service for SPO
     this.sts = {

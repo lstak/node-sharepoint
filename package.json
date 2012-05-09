@@ -2,7 +2,7 @@
   "author": "Luc Stakenborg <l.stakenborg@oxida.com> (http://www.oxida.com)",
   "name": "sharepoint",
   "description": "SharePoint client for Node.js",
-  "version": "0.0.4",
+  "version": "0.0.5",
   "homepage": "https://github.com/lstak/node-sharepoint",
   "repository": {
     "type": "git",
@@ -12,6 +12,9 @@
   "engines": {
     "node": ">=0.6"
   },
-  "dependencies": {},
+  
+  "dependencies": {     
+	"xml2js": ">= 0.0.1"   
+  }, 
   "devDependencies": {}
 }
