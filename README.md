@@ -31,7 +31,7 @@ An object of this class represents a REST Service client for the specified Share
 Example:
 
 ````
-var client = new SP.RestService('http://oxida.sharepoint.com/teamsite')
+var client = new SP.RestService('https://oxida.sharepoint.com/teamsite')
 ````
 
 ### client.signin (username, password, callback)
