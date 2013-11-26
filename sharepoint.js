@@ -242,7 +242,6 @@ function request(options, next) {
         var res_data = '';
         res.setEncoding('utf8');
         res.on('data', function (chunk) {
-            //console.log('CHUNK:', chunk);
             res_data += chunk;
         });
         res.on('end', function () {
@@ -250,16 +249,26 @@ function request(options, next) {
             if (!next) return;
 
             // if data of content-type application/json is return, parse into JS:
-            if (res_data && (res.headers['content-type'].indexOf('json') > 0)) {
-                res_data = JSON.parse(res_data).d
+            if (res_data != '' && (res.headers['content-type'].indexOf('json') >= 0)) {
+                try {
+                    res_data = JSON.parse(res_data);
+                } catch(e) {
+                    return next({
+                        message: 'Received invalid JSON response from SharePoint.',
+                        body: res_data
+                    }, null);
+                }
+
+                // If Sharepoint returns an error notify via callback
+                if(res_data.error) {
+                    return next(res_data.error, null);
+                }
+
+                // Else return data from Sharepoint
+                return next(null, res_data.d);
             }
 
-            if (res_data) {
-                next(null, res_data)
-            }
-            else {
-                next()
-            }
+            next();
         });
     })
 
