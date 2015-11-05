@@ -4,7 +4,7 @@
     http = require('http'),
     https = require('https'),
     urlparse = require('url').parse,
-    samlRequestTemplate = fs.readFileSync(__dirname+'/SAML.xml', 'utf8');
+    samlRequestTemplate = fs.readFileSync(__dirname + '/SAML.xml', 'utf8');
 
 
 var buildSamlRequest = function (params) {
@@ -111,10 +111,10 @@ function requestToken(params, callback) {
             parseXml(xml, function (js) {
 
                 // check for errors
-                if (js['S:Body']['S:Fault']) { 
+                if (js['S:Body']['S:Fault']) {
                     var error = js['S:Body']['S:Fault']['S:Detail']['psf:error']['psf:internalerror']['psf:text'];
                     callback(error);
-                    return; 
+                    return;
                 } 
 
                 // extract token
@@ -128,7 +128,7 @@ function requestToken(params, callback) {
             })
         })
     });
-    
+
     req.end(samlRequest);
 }
 
@@ -149,7 +149,7 @@ function submitToken(params, callback) {
 
     var protocol = (ssl ? https : http);
 
-    
+
 
     var req = protocol.request(options, function (res) {
 
@@ -285,7 +285,7 @@ function get(arg1, arg2) {
         callback = arg2
     }
 
-    if (!arg2) { 
+    if (!arg2) {
         callback = arg1
     }
 
