@@ -5,5 +5,17 @@
     "args": [
         "--no-color"
     ],
-    "tasks": []
+    "tasks": [
+        {
+            "taskName": "run-tests",
+            "isTestCommand": true,
+            "isBuildCommand": false
+        },
+        
+        {
+            "taskName": "default",
+            "isTestCommand": false,
+            "isBuildCommand": true
+        }
+    ]
 }

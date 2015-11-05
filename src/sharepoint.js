@@ -1,22 +1,23 @@
-﻿var fs = require('fs'),
-    qs = require('querystring'),
-    xml2js = require('xml2js'),
-    http = require('http'),
-    https = require('https'),
-    urlparse = require('url').parse,
-    samlRequestTemplate = fs.readFileSync(__dirname + '/SAML.xml', 'utf8');
+﻿'use strict';
 
+var fs = require('fs');
+var qs = require('querystring');
+var xml2js = require('xml2js');
+var http = require('http');
+var https = require('https');
+var urlparse = require('url').parse;
+var samlRequestTemplate = fs.readFileSync(__dirname + '/SAML.xml', 'utf8');
 
 var buildSamlRequest = function (params) {
     var key,
         saml = samlRequestTemplate;
 
     for (key in params) {
-        saml = saml.replace('[' + key + ']', params[key])
+        saml = saml.replace('[' + key + ']', params[key]);
     }
 
     return saml;
-}
+};
 
 var parseXml = function (xml, callback) {
     var parser = new xml2js.Parser({
@@ -24,24 +25,24 @@ var parseXml = function (xml, callback) {
     });
 
     parser.on('end', function (js) {
-        callback && callback(js)
+        callback && callback(js);
     });
 
     parser.parseString(xml);
 };
 
 var parseCookie = function (txt) {
-    var properties = txt.split('; '),
-        cookie = {};
+    var properties = txt.split('; ');
+    var cookie = {};
 
     properties.forEach(function (property, index) {
         var idx = property.indexOf('='),
             name = (idx > 0 ? property.substring(0, idx) : property),
             value = (idx > 0 ? property.substring(idx + 1) : undefined);
 
-        if (index == 0) {
-            cookie.name = name,
-            cookie.value = value
+        if (index === 0) {
+            cookie.name = name;
+            cookie.value = value;
         } else {
             cookie[name] = value
         }
@@ -52,7 +53,7 @@ var parseCookie = function (txt) {
 };
 
 var parseCookies = function (txts) {
-    var cookies = []
+    var cookies = [];
 
     if (txts) {
         txts.forEach(function (txt) {
@@ -298,9 +299,6 @@ function get(arg1, arg2) {
 
     this.service.request(options, callback);
 }
-
-
-
 
 function add(attributes, next) {
     var options = {
