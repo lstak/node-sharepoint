@@ -1,0 +1,20 @@
+{
+    "version": "0.1.0",
+    "command": "gulp",
+    "isShellCommand": true,
+    "args": [
+        "--no-color"
+    ],
+    "tasks": [
+        {
+            "taskName": "run-tests",
+            "isTestCommand": true,
+            "isBuildCommand": false
+        },
+                {
+            "taskName": "default",
+            "isTestCommand": false,
+            "isBuildCommand": true
+        }
+    ]
+}
