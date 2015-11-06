@@ -19,16 +19,17 @@ describe('Start Connection Test', function () {
 			assert.notEqual(client, null);
 		});
 		it('the client should connect', function (done) {
-			this.timeout(1500);
+			this.timeout(30000);
 			assert.doesNotThrow(
 				function () {
-					client.SignIn('xxx@class-solutions.com.br', 'xxx', function (err, data) {
-						done(err);
+					client.SignIn('lucas.dev@class-solutions.com.br', 'Class@2015!', function (err, data) {
+						if (err) done(err);
+						else done();
 					});
 				},
 				function (error) {
 					return done(error);
-				},'Error :|');
+				});
 		});
 	});
 });

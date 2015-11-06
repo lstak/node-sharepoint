@@ -55,6 +55,8 @@ module SP {
         }
         private Login: string;
         private ODataEndPoint: string;
+        private FedAuth: string;
+        private rtFa: string;
         
         /**Instantiates a new Instance of the REST Requests Service */
         public constructor(
@@ -86,8 +88,28 @@ module SP {
             /**User Password */
             password: string, 
             /**Callback Function for the Login Event */
-            callback: (ev: Event) => any): void {
+            callback: (error: any, data: any) => any): void {
+            var self = this;
 
+            var options = {
+                username: username,
+                password: password,
+                sts: self.STS,
+                endpoint: self.Url.protocol + '//' + self.Url.hostname + self.Login
+            }
+
+            RestService._RequestToken(options, function(err, data) {
+
+                if (err) {
+                    callback(err, null);
+                    return;
+                }
+
+                self.FedAuth = data.FedAuth;
+                self.rtFa = data.rtFa;
+
+                callback(null, data);
+            })
         }
         
         
@@ -108,28 +130,28 @@ module SP {
             this.Request(options, next);
         }
 
-        private _BuildSamlRequest(params: any): any {
-            var key, saml = samlRequestTemplate;
+        static _BuildSamlRequest(params: any): any {
+            var saml = samlRequestTemplate;
 
-            for (key in params) {
+            for (var key in params) {
                 saml = saml.replace('[' + key + ']', params[key]);
             }
             return saml;
         }
 
-        private _ParseXml(xml: string, callback: (ev: Event) => any): void {
+        static _ParseXml(xml: string, callback: (ev: Event) => any): void {
             var parser = new xml2js.Parser({
                 emptyTag: ''  // use empty string as value when tag empty
             });
 
-            parser.on('end', function(js) {
+            parser.on('end', (js: Event): void => {
                 callback && callback(js);
             });
 
             parser.parseString(xml);
         }
 
-        private _ParseCookie(txt: string): any {
+        static _ParseCookie(txt: string): any {
             var properties = txt.split('; ');
             var cookie = new Cookie('', '');
 
@@ -148,7 +170,123 @@ module SP {
             })
 
             return cookie;
-        };
+        }
+
+        static _ParseCookies(txts: Array<string>): any {
+            var cookies = [];
+
+            if (txts) {
+                txts.forEach((txt: string): void => {
+                    var cookie = this._ParseCookie(txt);
+                    cookies.push(cookie)
+                });
+            }
+
+            return cookies;
+        }
+
+        static _GetCookie(cookies: Array<string>, name: string): any {
+            var cookie;
+            var len = cookies.length;
+
+            for (var i = 0; i < len; i++) {
+                cookie = cookies[i]
+                if (cookie.name == name) {
+                    return cookie
+                }
+            }
+
+            return undefined;
+        }
+
+        static _SubmitToken(params: any, callback: any): any {
+            var token = params.token,
+                url = urlparse(params.endpoint),
+                ssl = (url.protocol == 'https:');
+
+            var options = {
+                method: 'POST',
+                host: url.hostname,
+                path: url.path,
+                headers: {
+                    // E accounts require a user agent string
+                    'User-Agent': 'Mozilla/5.0 (compatible; MSIE 9.0; Windows NT 6.1; Win64; x64; Trident/5.0)'
+                }
+            };
+
+            var protocol = (ssl ? https : http);
+
+            var req = protocol.request(options, function(res) {
+
+                var xml = '';
+                res.setEncoding('utf8');
+                res.on('data', function(chunk) {
+                    xml += chunk;
+                })
+
+                res.on('end', function() {
+
+                    var cookies = RestService._ParseCookies(res.headers['set-cookie'])
+
+                    callback(null, {
+                        FedAuth: RestService._GetCookie(cookies, 'FedAuth').value,
+                        rtFa: RestService._GetCookie(cookies, 'rtFa').value
+                    })
+                })
+            });
+
+            req.end(token);
+        }
+
+        static _RequestToken(params, callback): void {
+            var samlRequest = RestService._BuildSamlRequest({
+                username: params.username,
+                password: params.password,
+                endpoint: params.endpoint
+            });
+
+            var options = {
+                method: 'POST',
+                host: params.sts.host,
+                path: params.sts.path,
+                headers: {
+                    'Content-Length': samlRequest.length
+                }
+            };
+
+            var req = https.request(options, function(res) {
+                var xml = '';
+
+                res.setEncoding('utf8');
+                res.on('data', function(chunk) {
+                    xml += chunk;
+                })
+
+                res.on('end', function() {
+
+                    (xml, function(js) {
+
+                        // check for errors
+                        if (js['S:Envelope']['S:Body'][0] && js['S:Envelope']['S:Body'][0]['S:Fault']) {
+                            var error = js['S:Envelope']['S:Body'][0]['S:Fault'][0]['S:Detail']['psf:error']['psf:internalerror']['psf:text'];
+                            callback(error);
+                            return;
+                        } 
+
+                        // extract token
+                        var token = js['S:Envelope']['S:Body']['wst:RequestSecurityTokenResponse']['wst:RequestedSecurityToken']['wsse:BinarySecurityToken']['#'];
+
+                        // Now we have the token, we need to submit it to SPO
+                        RestService._SubmitToken({
+                            token: token,
+                            endpoint: params.endpoint
+                        }, callback)
+                    })
+                })
+            });
+
+            req.end(samlRequest);
+        }
     }
     
     /**Auxiliar Methods to Deal with SharePoint Lists */
@@ -159,7 +297,6 @@ module SP {
             service: RestService, 
             /**List Name */
             name: string) {
-
         }
     }
 }

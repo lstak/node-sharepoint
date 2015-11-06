@@ -38,6 +38,22 @@ var SP;
             this.ODataEndPoint = '/_vti_bin/ListData.svc/';
         }
         RestService.prototype.SignIn = function (username, password, callback) {
+            var self = this;
+            var options = {
+                username: username,
+                password: password,
+                sts: self.STS,
+                endpoint: self.Url.protocol + '//' + self.Url.hostname + self.Login
+            };
+            RestService._RequestToken(options, function (err, data) {
+                if (err) {
+                    callback(err, null);
+                    return;
+                }
+                self.FedAuth = data.FedAuth;
+                self.rtFa = data.rtFa;
+                callback(null, data);
+            });
         };
         RestService.prototype.GetList = function (name) {
             var list = new SP.List(this, name);
@@ -49,14 +65,14 @@ var SP;
             var options = new MetadataOptions('$metadata', 'application/xml', 'GET');
             this.Request(options, next);
         };
-        RestService.prototype._BuildSamlRequest = function (params) {
-            var key, saml = samlRequestTemplate;
-            for (key in params) {
+        RestService._BuildSamlRequest = function (params) {
+            var saml = samlRequestTemplate;
+            for (var key in params) {
                 saml = saml.replace('[' + key + ']', params[key]);
             }
             return saml;
         };
-        RestService.prototype._ParseXml = function (xml, callback) {
+        RestService._ParseXml = function (xml, callback) {
             var parser = new xml2js.Parser({
                 emptyTag: ''
             });
@@ -65,7 +81,7 @@ var SP;
             });
             parser.parseString(xml);
         };
-        RestService.prototype._ParseCookie = function (txt) {
+        RestService._ParseCookie = function (txt) {
             var properties = txt.split('; ');
             var cookie = new Cookie('', '');
             properties.forEach(function (property, index) {
@@ -80,7 +96,92 @@ var SP;
             });
             return cookie;
         };
-        ;
+        RestService._ParseCookies = function (txts) {
+            var _this = this;
+            var cookies = [];
+            if (txts) {
+                txts.forEach(function (txt) {
+                    var cookie = _this._ParseCookie(txt);
+                    cookies.push(cookie);
+                });
+            }
+            return cookies;
+        };
+        RestService._GetCookie = function (cookies, name) {
+            var cookie;
+            var len = cookies.length;
+            for (var i = 0; i < len; i++) {
+                cookie = cookies[i];
+                if (cookie.name == name) {
+                    return cookie;
+                }
+            }
+            return undefined;
+        };
+        RestService._SubmitToken = function (params, callback) {
+            var token = params.token, url = urlparse(params.endpoint), ssl = (url.protocol == 'https:');
+            var options = {
+                method: 'POST',
+                host: url.hostname,
+                path: url.path,
+                headers: {
+                    'User-Agent': 'Mozilla/5.0 (compatible; MSIE 9.0; Windows NT 6.1; Win64; x64; Trident/5.0)'
+                }
+            };
+            var protocol = (ssl ? https : http);
+            var req = protocol.request(options, function (res) {
+                var xml = '';
+                res.setEncoding('utf8');
+                res.on('data', function (chunk) {
+                    xml += chunk;
+                });
+                res.on('end', function () {
+                    var cookies = RestService._ParseCookies(res.headers['set-cookie']);
+                    callback(null, {
+                        FedAuth: RestService._GetCookie(cookies, 'FedAuth').value,
+                        rtFa: RestService._GetCookie(cookies, 'rtFa').value
+                    });
+                });
+            });
+            req.end(token);
+        };
+        RestService._RequestToken = function (params, callback) {
+            var samlRequest = RestService._BuildSamlRequest({
+                username: params.username,
+                password: params.password,
+                endpoint: params.endpoint
+            });
+            var options = {
+                method: 'POST',
+                host: params.sts.host,
+                path: params.sts.path,
+                headers: {
+                    'Content-Length': samlRequest.length
+                }
+            };
+            var req = https.request(options, function (res) {
+                var xml = '';
+                res.setEncoding('utf8');
+                res.on('data', function (chunk) {
+                    xml += chunk;
+                });
+                res.on('end', function () {
+                    (xml, function (js) {
+                        if (js['S:Envelope']['S:Body'][0] && js['S:Envelope']['S:Body'][0]['S:Fault']) {
+                            var error = js['S:Envelope']['S:Body'][0]['S:Fault'][0]['S:Detail']['psf:error']['psf:internalerror']['psf:text'];
+                            callback(error);
+                            return;
+                        }
+                        var token = js['S:Envelope']['S:Body']['wst:RequestSecurityTokenResponse']['wst:RequestedSecurityToken']['wsse:BinarySecurityToken']['#'];
+                        RestService._SubmitToken({
+                            token: token,
+                            endpoint: params.endpoint
+                        }, callback);
+                    });
+                });
+            });
+            req.end(samlRequest);
+        };
         return RestService;
     })();
     SP.RestService = RestService;
