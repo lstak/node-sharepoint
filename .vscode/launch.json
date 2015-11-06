@@ -18,7 +18,9 @@
 			// Workspace relative or absolute path to the runtime executable to be used. Default is the runtime executable on the PATH.
 			"runtimeExecutable": null,
 			// Optional arguments passed to the runtime executable.
-			"runtimeArgs": ["--nolazy"],
+			"runtimeArgs": [
+				"--nolazy"
+			],
 			// Environment variables passed to the program.
 			"env": {
 				"NODE_ENV": "development"
@@ -27,6 +29,20 @@
 			"sourceMaps": false,
 			// If JavaScript source maps are enabled, the generated code is expected in this directory.
 			"outDir": null
+		},
+		{
+			"name": "Debug test/sharepoint.test.js",
+			"type": "node",
+			"program": "node_modules/mocha/bin/_mocha",
+			"stopOnEntry": false,
+			"args": [
+				"test/sharepoint.test.js"
+			],
+			"cwd": ".",
+			"runtimeExecutable": null,
+			"env": {
+				"NODE_ENV": "development"
+			}
 		},
 		{
 			"name": "Attach",

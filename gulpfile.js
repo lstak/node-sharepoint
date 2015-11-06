@@ -3,37 +3,37 @@ var uglify = require('gulp-uglify');
 var jslint = require('gulp-jslint');
 var ts = require('gulp-typescript');
 var mocha = require('gulp-mocha');
+var rimraf = require('gulp-rimraf');
 
-gulp.task('minifyjs', function () {
-	return gulp.src('src/*.js')
-		.pipe(uglify())
-		.pipe(gulp.dest('./dist/'));
-});
-
-gulp.task('movefiles', function () {
-	return gulp.src('src/SAML.xml')
-		.pipe(gulp.dest('./dist/'));
-})
-
-gulp.task('jslint', function () {
-	return gulp.src(['./src/*.js'])
-        .pipe(jslint({
-			node: true
-		}))
-        .on('error', function (error) {
-            console.error(String(error));
-        });
-});
-
-gulp.task('ts', function () {
-	return gulp.src('./src/*.ts')
-		.pipe(ts())
-		.pipe(gulp.dest('./dist/'));
-});
-
-gulp.task('run-tests', function () {
+gulp.task('run-tests', ['build'], function () {
 	return gulp.src('test/**/*.js', { read: false })
-		.pipe(mocha({ reporter: 'spec' }));
+		.pipe(mocha({ reporter: 'list' }));
 });
 
-gulp.task('default', ['minifyjs', 'movefiles', 'ts']);
+var minifyjs = function () {
+	var js = gulp.src('src/*.ts')
+		.pipe(ts())
+		.pipe(gulp.dest('./temp/'))
+		.on('end', function () {
+			return gulp.src('temp/*.js')
+				.pipe(uglify())
+				.pipe(gulp.dest('./dist'));
+		});
+	gulp.src('src/**/*.xml')
+		.pipe(gulp.dest('./temp/'))
+		.on('end', function () {
+			return gulp.src('temp/*.xml')
+				.pipe(gulp.dest('./dist'));
+		});
+	return js;
+};
+gulp.task('build', ['clean'], function () {
+	return minifyjs();
+});
+
+gulp.task('clean', function () {
+	return gulp.src('./{dist,temp}/**/*', { read: false })
+		.pipe(rimraf());
+});
+
+gulp.task('default', ['build']);
