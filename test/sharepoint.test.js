@@ -22,7 +22,7 @@ describe('Start Connection Test', function () {
 			this.timeout(1500);
 			assert.doesNotThrow(
 				function () {
-					client.signin('xxx@class-solutions.com.br', 'xxx', function (err, data) {
+					client.SignIn('xxx@class-solutions.com.br', 'xxx', function (err, data) {
 						done(err);
 					});
 				},

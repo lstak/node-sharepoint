@@ -11,8 +11,7 @@
             "isTestCommand": true,
             "isBuildCommand": false
         },
-        
-        {
+                {
             "taskName": "default",
             "isTestCommand": false,
             "isBuildCommand": true

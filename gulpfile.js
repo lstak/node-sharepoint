@@ -7,15 +7,28 @@ var rimraf = require('gulp-rimraf');
 
 gulp.task('run-tests', ['build'], function () {
 	return gulp.src('test/**/*.js', { read: false })
-		.pipe(mocha({ reporter: 'list' }));
+		.pipe(mocha({ reporter: 'spec' }));
 });
 
 var minifyjs = function () {
-	var js = gulp.src('src/*.ts')
-		.pipe(ts())
+	var js = gulp.src(['!src/**/*.d.ts','src/**/*.ts'])
+		.pipe(ts({
+			removeComments:true,
+			target:"ES5",
+			module:"amd",
+			declaration:true,
+			noImplicitAny:true
+		}))
 		.pipe(gulp.dest('./temp/'))
 		.on('end', function () {
-			return gulp.src('temp/*.js')
+			gulp.src('temp/*.js')
+				// .pipe(jslint({
+				// 	node:true,
+				// 	nomen:true,
+				// 	unparam:true, //TODO: Remove After Development
+				// 	passfail:false, //TODO: Remove After Development
+				// 	devel:true //TODO: Remove After Development
+				// }))
 				.pipe(uglify())
 				.pipe(gulp.dest('./dist'));
 		});
