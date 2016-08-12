@@ -111,14 +111,14 @@ function requestToken(params, callback) {
             parseXml(xml, function (js) {
 
                 // check for errors
-                if (js['S:Body']['S:Fault']) { 
-                    var error = js['S:Body']['S:Fault']['S:Detail']['psf:error']['psf:internalerror']['psf:text'];
+                if (js['S:Envelope']['S:Body']['S:Fault']) { 
+                    var error = js['S:Envelope']['S:Body']['S:Fault']['S:Detail']['psf:error']['psf:internalerror']['psf:text'];
                     callback(error);
                     return; 
                 } 
 
                 // extract token
-                var token = js['S:Body']['wst:RequestSecurityTokenResponse']['wst:RequestedSecurityToken']['wsse:BinarySecurityToken']['#'];
+                var token = js['S:Envelope']['S:Body'][0]['wst:RequestSecurityTokenResponse'][0]['wst:RequestedSecurityToken'][0]['wsse:BinarySecurityToken'][0]['_'];
 
                 // Now we have the token, we need to submit it to SPO
                 submitToken({
